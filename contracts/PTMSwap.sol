@@ -1,6 +1,7 @@
 pragma solidity >=0.7.0 <0.8.0;
 
 import "./interface/IERC20.sol";
+import "./interface/IDateTime.sol";
 import "./lib/Math.sol"
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
@@ -14,10 +15,11 @@ contract PTMSwap is  ERC20, ERC20PresetMinterPauser{
     IERC20 tokenA;
     IERC20 tokenB;
 
+    IDateTime DateTime;
+
     address vaultA;
     address vaultB;
     address vaultC;
-    address activeVault;
 
     address shockAbsorber;
 
@@ -29,15 +31,17 @@ contract PTMSwap is  ERC20, ERC20PresetMinterPauser{
     constructor(address _tokenA, address _tokenB) ERC20PresetMinterPauser("PTMLP", "PTMLP"){
         tokenA = IERC20(_tokenA);
         tokenB = IERC20(_tokenB);
+        DateTime = DateTime(0xa24D5608e17200B117CF984258a87fe885cc3999);
     }
-
-    function setActiveVault(address _vault) public{
-        activeVault = _vault;
-    }
-
 
     function setShockAbsorber(address token){
         shockAbsorber = token;
+    }
+
+    function setVaults(address v1, address  v2, address v3){
+        vaultA = v1;
+        vaultB = v2;
+        vaultC = v3;
     }
 
     // funciton that will facilitate swap
@@ -58,8 +62,12 @@ contract PTMSwap is  ERC20, ERC20PresetMinterPauser{
 
         uint fee = (2 * amountIn / 1000);
 
-        (token == tokenA)? reserve0 -= fee : reserve1 -= fee;
+        if(shockAbsorber == token){
+            uint shock = amountIn / 100;
+            _tokenA.transfer(getActiveVault(), shock);
+        }
 
+        (token == tokenA)? reserve0 -= fee : reserve1 -= fee;
     }
 
 
@@ -123,4 +131,18 @@ contract PTMSwap is  ERC20, ERC20PresetMinterPauser{
         burn(_amount);
     }
 
+    function getActiveVault() public view returns (address){
+        uint month = DateTime.getMonth(block.timestamp);
+        address activeVault;
+
+        if(month % 3 == 0){
+            activeVault = vaultA;
+        }else if((month + 1) % 3 == 0){
+            activeVault = vaultB;
+        }else if((month + 2) % 3 == 0){
+            activeVault = vaultC;
+        }
+
+        return activeVault;
+    }
 }
