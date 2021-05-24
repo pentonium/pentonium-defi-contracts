@@ -25,9 +25,16 @@ contract PTMVault is  ERC20, ERC20PresetMinterPauser{
         gap = _gap;
     }
 
+
     function depositLPToken(uint amount) public{
+        uint rGap;
+        if(gap == 0){ rGap = 2; }else if(gap == 1){ rGap = 0; }else{ rGap = 1; }
+
+        require(month + rGap) % 3 == 0, "Deposit of LP tokens are closed, Withdarls are open though.");
+
         IERC20(swap).transferFrom(msg.sender, address(this), amount);
         mint(msg.sender, amount);
+        
     }
 
     function withdrawLPToken(uint amount) public{
