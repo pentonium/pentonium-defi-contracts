@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 contract PTMFactory{
 
     mapping(address => mapping(address => address)) public pairs;
-    mapping (address => address) public vault;
+    mapping (address => address[]) public vault;
 
     function createAPair(address tokenA, address tokenB) public {
 
@@ -17,7 +17,11 @@ contract PTMFactory{
         PTMSwap swap = new PTMSwap(tokenA, tokenB);
         pairs[tokenA][tokenB] = address(swap);
         pairs[tokenB][tokenA] = address(swap);
-        PTMVault _vault = new PTMVault(tokenA, tokenB);
-        vault[swap] = _vault;
+        PTMVault vault0 = new PTMVault(swap, 0);
+        PTMVault vault1 = new PTMVault(swap, 1);
+        PTMVault vault2 = new PTMVault(swap, 2);
+        swap.setVaults(vault1, vault2, vault0);
+
+        vault[swap].push(vault0, vault1, vault2);
     }
 }
